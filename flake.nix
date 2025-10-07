@@ -16,13 +16,19 @@
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        foundry-zksync = pkgs.callPackage ./formula/foundry-zksync.nix { };
-        aderyn = pkgs.callPackage ./formula/aderyn.nix { };
+
+        formulaDir = ./formula;
+        formulas = builtins.attrNames (builtins.readDir formulaDir);
+
+        packages = builtins.listToAttrs (
+          map (file: {
+            name = builtins.replaceStrings [ ".nix" ] [ "" ] file;
+            value = pkgs.callPackage "${formulaDir}/${file}" { };
+          }) formulas
+        );
       in
       {
-        packages = {
-          inherit foundry-zksync aderyn;
-        };
+        inherit packages;
       }
     );
 }
