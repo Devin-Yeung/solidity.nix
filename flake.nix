@@ -17,10 +17,11 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         foundry-zksync = pkgs.callPackage ./formula/foundry-zksync.nix { };
+        aderyn = pkgs.callPackage ./formula/aderyn.nix { };
       in
       {
         packages = {
-          inherit foundry-zksync;
+          inherit foundry-zksync aderyn;
         };
       }
     );
