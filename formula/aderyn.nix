@@ -18,6 +18,11 @@ rustPlatform.buildRustPackage rec {
 
   cargoHash = "sha256-JmM4OjemW/UhYKyAScKYUzO//qylZTuJPYuLF8JUvJk=";
 
+  cargoBuildFlags = [
+    "-p"
+    "aderyn"
+  ];
+
   meta = with lib; {
     description = "A powerful Solidity static analyzer that takes a bird's eye view over your smart contracts.";
     homepage = "https://github.com/Cyfrin/aderyn";
