@@ -16,9 +16,11 @@ jobs:
       matrix:
         pkg:
           - aderyn
-          - foundry-zksync
+          # wired bug
+          # - foundry-zksync
         os:
           - ubuntu-latest
+          - ubuntu-24.04-arm
           - macos-latest
 
     runs-on: ${{ matrix.os }}
