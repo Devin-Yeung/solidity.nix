@@ -1,46 +1,55 @@
 {
-  stdenv,
-  system,
-  fetchurl,
+  pkgs,
+  lib,
+  fetchFromGitHub,
+  inputs,
   ...
 }:
-
 let
-  archMap = {
-    "x86_64-linux" = "linux_amd64";
-    "aarch64-linux" = "linux_arm64";
-    "x86_64-darwin" = "darwin_amd64";
-    "aarch64-darwin" = "darwin_arm64";
+  src = fetchFromGitHub {
+    owner = "matter-labs";
+    repo = "foundry-zksync";
+    tag = "foundry-zksync-v0.0.30";
+    hash = "sha256-dGDFfVpne3kyBCvnkiRAdN0nwcBWJD1hRLQBk3VvDWQ=";
   };
 
-  arch = archMap.${system} or (throw "Unsupported system: ${system}");
+  toolchain = pkgs.rust-bin.fromRustupToolchainFile "${src}/rust-toolchain";
 
-  sha256 = {
-    "x86_64-linux" = "sha256-QakGq4UTjeASJ7OvpLQfx0CgR6BsptZuFpQgXhzC5LU=";
-    "aarch64-linux" = "sha256-kfm2pqHQ37/qv05sh6GUXG2HF0o+086uvPbUn3s2+tw=";
-    "x86_64-darwin" = "sha256-vnfONSds9T0wsx1p90KG2dFiSIyI5MN1dOxGlr8dOrQ=";
-    "aarch64-darwin" = "sha256-iE5/Pfd6eXZ97GH0bil1ARKaC0VNa3FO1oNkodtKeUU=";
-  };
-
-  version = "0.0.29";
+  craneLib = (inputs.crane.mkLib pkgs).overrideToolchain toolchain;
 in
+craneLib.buildPackage {
+  # Some crates download stuff from the network while compiling
+  # Allows derivation to access network
+  #
+  # Users of this package must set options to indicate that the sandbox conditions can be relaxed for this package.
+  # These are:
+  # - When used in a flake, set the flake's config with this line: nixConfig.sandbox = false;
+  # - From the command line with nix <command>, add one of these options:
+  #   - --option sandbox false
+  #   - --no-sandbox
+  __noChroot = true;
 
-stdenv.mkDerivation {
-  inherit version;
-  pname = "foundry-zksync";
-  src = fetchurl {
-    url = "https://github.com/matter-labs/foundry-zksync/releases/download/foundry-zksync-v${version}/foundry_zksync_v${version}_${arch}.tar.gz";
-    sha256 = sha256.${system};
+  pname = src.repo;
+  version = src.tag;
+  inherit src;
+
+  doCheck = false;
+
+  nativeBuildInputs =
+    with pkgs;
+    [
+      pkg-config
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [ ];
+
+  buildInputs =
+    with pkgs;
+    [
+      openssl.dev
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [ ];
+
+  env = {
+    OPENSSL_NO_VENDOR = "1";
   };
-
-  sourceRoot = ".";
-
-  installPhase = ''
-    mkdir -p $out/bin
-    cp cast $out/bin/
-    cp forge $out/bin/
-  '';
-
-  dontBuild = true;
-  dontConfigure = true;
 }

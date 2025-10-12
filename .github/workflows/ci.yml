@@ -31,4 +31,4 @@ jobs:
         uses: DeterminateSystems/determinate-nix-action@main
 
       - name: Build Packages
-        run: nix build .#${{ matrix.pkg }}
+        run: nix build --no-sandbox .#${{ matrix.pkg }}
