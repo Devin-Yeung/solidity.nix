@@ -1,14 +1,12 @@
 {
-  lib,
-  rustPlatform,
+  pkgs,
   fetchFromGitHub,
+  inputs,
+  ...
 }:
-rustPlatform.buildRustPackage rec {
+let
   pname = "aderyn";
   version = "0.6.1";
-
-  doCheck = false;
-
   src = fetchFromGitHub {
     owner = "Cyfrin";
     repo = "aderyn";
@@ -16,18 +14,24 @@ rustPlatform.buildRustPackage rec {
     sha256 = "sha256-IT+3KqUlQHDOvIkPAj/6eZm6VJJcfSQNfccJkkyGZbc=";
   };
 
-  cargoHash = "sha256-JmM4OjemW/UhYKyAScKYUzO//qylZTuJPYuLF8JUvJk=";
+  craneLib = inputs.crane.mkLib pkgs;
+in
+craneLib.buildPackage {
+  # Some crates download stuff from the network while compiling
+  # Allows derivation to access network
+  #
+  # Users of this package must set options to indicate that the sandbox conditions can be relaxed for this package.
+  # These are:
+  # - When used in a flake, set the flake's config with this line: nixConfig.sandbox = false;
+  # - From the command line with nix <command>, add one of these options:
+  #   - --option sandbox false
+  #   - --no-sandbox
+  __noChroot = true;
 
-  cargoBuildFlags = [
-    "-p"
-    "aderyn"
-  ];
+  inherit version pname;
+  inherit src;
 
-  meta = with lib; {
-    description = "A powerful Solidity static analyzer that takes a bird's eye view over your smart contracts.";
-    homepage = "https://github.com/Cyfrin/aderyn";
-    license = licenses.gpl3;
-    maintainers = [ ];
-    platforms = platforms.all;
-  };
+  doCheck = false;
+
+  cargoExtraArgs = "-p aderyn";
 }
