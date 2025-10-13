@@ -32,5 +32,15 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@main
 
+      - name: Setup Attic
+        run: |
+          nix profile install 'nixpkgs#attic-client'
+          attic login central ${{ secrets.ATTIC_ENDPOINT }} ${{ secrets.ATTIC_TOKEN }}
+          attic use central:${{ secrets.ATTIC_CACHE }}
+
       - name: Build Packages
         run: nix build --no-sandbox .#${{ matrix.pkg }}
+
+      - name: Push to Attic
+        if: success()
+        run: attic push central:${{ secrets.ATTIC_CACHE }} ./result
